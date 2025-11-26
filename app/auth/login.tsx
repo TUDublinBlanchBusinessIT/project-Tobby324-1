@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { Image } from 'react-native';
@@ -8,14 +9,18 @@ import { useAuth } from '@/app/auth-context';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
 
-  // Email validation regex
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string) => {
+    return password.length >= 8;
   };
 
   const handleLogin = async () => {
@@ -29,9 +34,19 @@ export default function LoginScreen() {
       return;
     }
 
+    if (!password) {
+      Alert.alert('Error', 'Please enter your password');
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      Alert.alert('Error', 'Password must be at least 8 characters');
+      return;
+    }
+
     setLoading(true);
     try {
-      await login(email);
+      await login(email, password);
       Alert.alert('Success', 'Login successful!');
     } catch (error) {
       Alert.alert('Error', 'Login failed');
@@ -41,47 +56,56 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <ThemedView style={styles.container}>
-        {/* Logo */}
-        <Image
-          source={require('@/assets/images/icon.png')}
-          style={styles.logo}
-        />
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ThemedView style={styles.container}>
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={styles.logo}
+          />
 
-        {/* Email Label */}
-        <ThemedText style={styles.label}>Email Address</ThemedText>
+          <ThemedText style={styles.label}>Email Address</ThemedText>
 
-        {/* Email Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="you@example.com"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          editable={!loading}
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="you@example.com"
+            placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            editable={!loading}
+          />
 
-        {/* Sign In Button */}
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          <ThemedText style={styles.buttonText}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </ThemedText>
-        </TouchableOpacity>
+          <ThemedText style={styles.label}>Password</ThemedText>
 
-        {/* Sign Up Link */}
-        <TouchableOpacity onPress={() => router.push('/auth/signup')}>
-          <ThemedText style={styles.signupLink}>
-            Don't have an account? <ThemedText style={styles.signupLinkBold}>Sign up</ThemedText>
-          </ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-    </ScrollView>
+          <TextInput
+            style={styles.input}
+            placeholder="At least 8 characters"
+            placeholderTextColor="#999"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!loading}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <ThemedText style={styles.buttonText}>
+              {loading ? 'Signing in...' : 'Sign In'}
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.push('/auth/signup')}>
+            <ThemedText style={styles.signupLink}>
+              Don't have an account? <ThemedText style={styles.signupLinkBold}>Sign up</ThemedText>
+            </ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -141,3 +165,4 @@ const styles = StyleSheet.create({
     color: '#0d7c8a',
   },
 });
+

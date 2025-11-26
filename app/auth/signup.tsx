@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { Image } from 'react-native';
@@ -7,44 +8,45 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/app/auth-context';
 
 export default function SignupScreen() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [userType, setUserType] = useState<'borrower' | 'lender' | 'both' | null>(null);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { signup } = useAuth();
   const router = useRouter();
 
-  // Email validation regex
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // Password validation - minimum 8 characters
   const validatePassword = (password: string) => {
     return password.length >= 8;
   };
 
   const handleSignup = async () => {
-    // Validate all fields filled
-    if (!email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    // Validate email format
+    if (!userType) {
+      Alert.alert('Error', 'Please select a user type');
+      return;
+    }
+
     if (!validateEmail(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
-    // Validate password length
     if (!validatePassword(password)) {
       Alert.alert('Error', 'Password must be at least 8 characters');
       return;
     }
 
-    // Validate passwords match
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
@@ -52,17 +54,8 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      // TODO: Replace with your actual API signup call
-      // const response = await fetch('YOUR_API/signup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
-
-      // For demo, auto-login after signup
-      await login(email);
+      await signup(email, password, name, userType);
       Alert.alert('Success', 'Account created!');
-      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', 'Signup failed');
     } finally {
@@ -71,75 +64,108 @@ export default function SignupScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <ThemedView style={styles.container}>
-        {/* Logo */}
-        <Image
-          source={require('@/assets/images/icon.png')}
-          style={styles.logo}
-        />
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ThemedView style={styles.container}>
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={styles.logo}
+          />
 
-        {/* Email Label */}
-        <ThemedText style={styles.label}>Email Address</ThemedText>
+          <ThemedText style={styles.label}>Full Name</ThemedText>
+          <TextInput
+            style={styles.input}
+            placeholder="Your full name"
+            placeholderTextColor="#999"
+            value={name}
+            onChangeText={setName}
+            editable={!loading}
+          />
 
-        {/* Email Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="you@example.com"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          editable={!loading}
-        />
+          <ThemedText style={styles.label}>Email Address</ThemedText>
+          <TextInput
+            style={styles.input}
+            placeholder="you@example.com"
+            placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            editable={!loading}
+          />
 
-        {/* Password Label */}
-        <ThemedText style={styles.label}>Password</ThemedText>
+          <ThemedText style={styles.label}>Password</ThemedText>
+          <TextInput
+            style={styles.input}
+            placeholder="At least 8 characters"
+            placeholderTextColor="#999"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!loading}
+          />
 
-        {/* Password Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="At least 8 characters"
-          placeholderTextColor="#999"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!loading}
-        />
+          <ThemedText style={styles.label}>Confirm Password</ThemedText>
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm your password"
+            placeholderTextColor="#999"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            editable={!loading}
+          />
 
-        {/* Confirm Password Label */}
-        <ThemedText style={styles.label}>Confirm Password</ThemedText>
+          <ThemedText style={styles.label}>I want to:</ThemedText>
+          <View style={styles.userTypeContainer}>
+            <TouchableOpacity
+              style={[styles.userTypeButton, userType === 'borrower' && styles.userTypeButtonActive]}
+              onPress={() => setUserType('borrower')}
+              disabled={loading}
+            >
+              <ThemedText style={[styles.userTypeText, userType === 'borrower' && styles.userTypeTextActive]}>
+                Borrow
+              </ThemedText>
+            </TouchableOpacity>
 
-        {/* Confirm Password Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm your password"
-          placeholderTextColor="#999"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          editable={!loading}
-        />
+            <TouchableOpacity
+              style={[styles.userTypeButton, userType === 'lender' && styles.userTypeButtonActive]}
+              onPress={() => setUserType('lender')}
+              disabled={loading}
+            >
+              <ThemedText style={[styles.userTypeText, userType === 'lender' && styles.userTypeTextActive]}>
+                Lend
+              </ThemedText>
+            </TouchableOpacity>
 
-        {/* Sign Up Button */}
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSignup}
-          disabled={loading}
-        >
-          <ThemedText style={styles.buttonText}>
-            {loading ? 'Creating Account...' : 'Sign Up'}
-          </ThemedText>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.userTypeButton, userType === 'both' && styles.userTypeButtonActive]}
+              onPress={() => setUserType('both')}
+              disabled={loading}
+            >
+              <ThemedText style={[styles.userTypeText, userType === 'both' && styles.userTypeTextActive]}>
+                Both
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
 
-        {/* Sign In Link */}
-        <TouchableOpacity onPress={() => router.push('/auth/login')}>
-          <ThemedText style={styles.signinLink}>
-            Already have an account? <ThemedText style={styles.signinLinkBold}>Sign In</ThemedText>
-          </ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-    </ScrollView>
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleSignup}
+            disabled={loading}
+          >
+            <ThemedText style={styles.buttonText}>
+              {loading ? 'Creating Account...' : 'Sign Up'}
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.push('/auth/login')}>
+            <ThemedText style={styles.signinLink}>
+              Already have an account? <ThemedText style={styles.signinLinkBold}>Sign In</ThemedText>
+            </ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -173,6 +199,33 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
     color: '#333',
+  },
+  userTypeContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+    justifyContent: 'space-between',
+  },
+  userTypeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    alignItems: 'center',
+  },
+  userTypeButtonActive: {
+    backgroundColor: '#0d7c8a',
+    borderColor: '#0d7c8a',
+  },
+  userTypeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  userTypeTextActive: {
+    color: '#fff',
   },
   button: {
     backgroundColor: '#0d7c8a',
