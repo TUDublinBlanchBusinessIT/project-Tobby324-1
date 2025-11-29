@@ -1,6 +1,9 @@
 # BorrowBox - Mobile App (MVP)
 
 A hyperlocal item-sharing platform that connects neighbors who want to lend household items with neighbors who need to borrow them briefly.
+# BorrowBox - Mobile App (MVP)
+
+A hyperlocal item-sharing platform that connects neighbors who want to lend household items with neighbors who need to borrow them briefly.
 
 ## Project Information
 
@@ -13,35 +16,38 @@ A hyperlocal item-sharing platform that connects neighbors who want to lend hous
 ## Executive Summary
 
 BorrowBox is a React Native mobile application that enables neighbors to share household items instead of purchasing them. This MVP (Minimum Viable Product) demonstrates the core functionality of the platform: user registration, item listing, browsing, and request management. The app addresses the problem of wasteful spending on seldom-used household items while fostering community connections.
+## Project Information
 
-## MVP Features
+**Student Name:** Tobby Akinwale  
+**Student ID:** B00165442  
+**Course:** Business & IT  
+**Institution:** TU Dublin - Blanchardstown  
+**Assignment:** CA2 - Develop a Mobile App  
 
-This proof-of-concept implements the following core features:
+## Executive Summary
 
-### 1. User Authentication
-- User registration with name and email
-- User login functionality
-- Dual role support (users can be both Borrowers and Lenders)
+BorrowBox is a React Native mobile application that enables neighbors to share household items instead of purchasing them. This MVP (Minimum Viable Product) demonstrates the core functionality of the platform: user registration, item listing, browsing, and request management. The app addresses the problem of wasteful spending on seldom-used household items while fostering community connections.
 
-### 2. Lender Features
-- **Add Item Form**: Create listings with title, description, category, image, and pricing (daily rate or free)
-- **My Items Screen**: View all listed items with edit and delete capabilities
-- **Request Management**: 
-  - View borrower profiles (personal information, reviews, location)
-  - Accept or decline requests
+## Get a fresh project
 
-### 3. Borrower Features
-- **Browse Items**: View all available items from nearby lenders
-- **Request Item**: Submit borrowing requests with specific dates
+When you're ready, run:
 
-### 4. Data Persistence
-- All user data, items, and requests are stored in Firebase Firestore
-- Real-time data synchronization across the app
+```bash
+npm run reset-project
+```
 
-## Technologies Used
+This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-- **React Native** - Mobile app framework
-- **Expo** - Development and build toolchain
-- **Firebase Firestore** - Cloud database for storing users, items, and requests
-- **Firebase Storage** - Image storage for item photos
-- **React Navigation** - Navigation between screens
+## Learn more
+
+To learn more about developing your project with Expo, look at the following resources:
+
+- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+
+## Join the community
+
+Join our community of developers creating universal apps.
+
+- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
+- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
