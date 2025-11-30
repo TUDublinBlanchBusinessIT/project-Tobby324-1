@@ -1,6 +1,13 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useSegments } from 'expo-router';
+import { auth, db } from '@/config/firebase';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface UserData {
   email: string;
@@ -27,28 +34,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        const token = await AsyncStorage.getItem('authToken');
-        const userData = await AsyncStorage.getItem('userData');
-        
-        if (token && userData) {
-          setIsLoggedIn(true);
-          setUser(JSON.parse(userData));
+        if (firebaseUser) {
+          const userDocRef = doc(db, "users", firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data() as UserData;
+            setUser(userData);
+            setIsLoggedIn(true);
+          } else {
+            setUser(null);
+            setIsLoggedIn(false);
+          }
         } else {
-          setIsLoggedIn(false);
           setUser(null);
+          setIsLoggedIn(false);
         }
       } catch (error) {
         console.error('Failed to check auth:', error);
-        setIsLoggedIn(false);
         setUser(null);
+        setIsLoggedIn(false);
       } finally {
         setIsLoading(false);
       }
-    };
+    });
 
-    checkAuth();
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -65,20 +78,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const token = `token_${email}`;
-      await AsyncStorage.setItem('authToken', token);
-      
-      const userData = await AsyncStorage.getItem('userData');
-      if (userData) {
-        const user = JSON.parse(userData);
-        if (user.email === email) {
-          setUser(user);
-          setIsLoggedIn(true);
-          return;
-        }
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userDocRef = doc(db, "users", userCredential.user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data() as UserData;
+        setUser(userData);
+        setIsLoggedIn(true);
+      } else {
+        throw new Error('User data not found');
       }
-      
-      throw new Error('Invalid credentials');
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -87,16 +97,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = useCallback(async (email: string, password: string, name: string, userType: 'borrower' | 'lender' | 'both') => {
     try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
       const userData: UserData = {
         email,
         name,
         userType
       };
 
-      const token = `token_${email}`;
-      await AsyncStorage.setItem('authToken', token);
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
-      
+      const userDocRef = doc(db, "users", userCredential.user.uid);
+      await setDoc(userDocRef, {
+        ...userData,
+        createdAt: new Date().toISOString()
+      });
+
       setUser(userData);
       setIsLoggedIn(true);
     } catch (error) {
@@ -107,8 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('userData');
+      await firebaseSignOut(auth);
       setIsLoggedIn(false);
       setUser(null);
     } catch (error) {
