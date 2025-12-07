@@ -164,6 +164,29 @@ export async function deleteItem(itemId: string): Promise<void> {
   }
 }
 
+export async function getUserItems(userId: string): Promise<Item[]> {
+  try {
+    const q = query(
+      collection(db, 'items'),
+      where('ownerId', '==', userId)
+    );
+    const querySnapshot = await getDocs(q);
+
+    // Sort in memory instead of using orderBy to avoid index requirement
+    const items = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Item[];
+
+    return items.sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch (error) {
+    console.error('Error getting user items:', error);
+    throw error;
+  }
+}
+
 // Request CRUD Operations
 
 export async function createRequest(requestData: Omit<BorrowRequest, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
@@ -297,6 +320,30 @@ export function subscribeToAvailableItems(
   }
 
   const q = query(collection(db, 'items'), ...constraints);
+
+  return onSnapshot(q, (snapshot) => {
+    const items = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Item[];
+
+    // Sort in memory
+    items.sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    callback(items);
+  });
+}
+
+export function subscribeToUserItems(
+  userId: string,
+  callback: (items: Item[]) => void
+): () => void {
+  const q = query(
+    collection(db, 'items'),
+    where('ownerId', '==', userId)
+  );
 
   return onSnapshot(q, (snapshot) => {
     const items = snapshot.docs.map(doc => ({
