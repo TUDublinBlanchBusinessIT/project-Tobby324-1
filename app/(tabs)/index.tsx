@@ -248,8 +248,113 @@ export default function HomeScreen() {
     );
   }
 
-  if (user && user.userType === "borrower") {
+  function renderLenderUI() {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.lenderHeader}>
+          <Text style={styles.lenderHeaderTitle}>Your Lending Dashboard</Text>
+          <Text style={styles.lenderHeaderSubtitle}>Manage your items and requests</Text>
+        </View>
+
+        {/* Statistics Cards */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <View style={styles.statIconContainer}>
+              <Text style={styles.statIcon}>📦</Text>
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Listed Items</Text>
+              <Text style={styles.statValue}>3</Text>
+            </View>
+          </View>
+
+          <View style={styles.statCard}>
+            <View style={styles.statIconContainer}>
+              <Text style={styles.statIcon}>🕐</Text>
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Pending Requests</Text>
+              <Text style={styles.statValue}>0</Text>
+            </View>
+          </View>
+
+          <View style={styles.statCard}>
+            <View style={styles.statIconContainer}>
+              <Text style={styles.statIcon}>✅</Text>
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Active Loans</Text>
+              <Text style={styles.statValue}>0</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.quickActionsSection}>
+          <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+
+          <TouchableOpacity style={styles.addItemButton}>
+            <Text style={styles.addItemButtonText}>+ Add New Item</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.viewRequestsButton}>
+            <Text style={styles.viewRequestsButtonText}>🕐 View Requests (0)</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.activeLoansButton}>
+            <Text style={styles.activeLoansButtonText}>✅ Active Loans (0)</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Recent Items */}
+        <View style={styles.recentItemsSection}>
+          <View style={styles.recentItemsHeader}>
+            <Text style={styles.recentItemsTitle}>Your Recent Items</Text>
+            <TouchableOpacity>
+              <Text style={styles.viewAllLink}>View All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.recentItemCard}>
+            <View style={styles.recentItemInfo}>
+              <Text style={styles.recentItemName}>Mountain Bike</Text>
+              <Text style={styles.recentItemCategory}>Sports</Text>
+            </View>
+            <View style={styles.availableBadge}>
+              <Text style={styles.availableBadgeText}>Available</Text>
+            </View>
+          </View>
+
+          <View style={styles.recentItemCard}>
+            <View style={styles.recentItemInfo}>
+              <Text style={styles.recentItemName}>Projector</Text>
+              <Text style={styles.recentItemCategory}>Electronics</Text>
+            </View>
+            <View style={styles.borrowedBadge}>
+              <Text style={styles.borrowedBadgeText}>Borrowed</Text>
+            </View>
+          </View>
+
+          <View style={styles.recentItemCard}>
+            <View style={styles.recentItemInfo}>
+              <Text style={styles.recentItemName}>DSLR Camera</Text>
+              <Text style={styles.recentItemCategory}>Electronics</Text>
+            </View>
+            <View style={styles.availableBadge}>
+              <Text style={styles.availableBadgeText}>Available</Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  if (user?.userType === "borrower") {
     return renderBorrowerUI();
+  }
+
+  if (user?.userType === "lender" || user?.userType === "both") {
+    return renderLenderUI();
   }
 
   return (
@@ -471,5 +576,171 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 50,
     color: "#666",
+  },
+  // Lender Dashboard Styles
+  lenderHeader: {
+    backgroundColor: "#0d7c8a",
+    padding: 20,
+    paddingTop: 60,
+  },
+  lenderHeaderTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 5,
+  },
+  lenderHeaderSubtitle: {
+    fontSize: 14,
+    color: "#fff",
+    opacity: 0.9,
+  },
+  statsContainer: {
+    padding: 15,
+    gap: 12,
+  },
+  statCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  statIconContainer: {
+    marginRight: 15,
+  },
+  statIcon: {
+    fontSize: 32,
+  },
+  statContent: {
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  quickActionsSection: {
+    padding: 15,
+    paddingTop: 5,
+  },
+  quickActionsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 15,
+  },
+  addItemButton: {
+    backgroundColor: "#0d7c8a",
+    padding: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  addItemButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  viewRequestsButton: {
+    backgroundColor: "#ff8c00",
+    padding: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  viewRequestsButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  activeLoansButton: {
+    backgroundColor: "#00c853",
+    padding: 16,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  activeLoansButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  recentItemsSection: {
+    padding: 15,
+    paddingTop: 5,
+  },
+  recentItemsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  recentItemsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  viewAllLink: {
+    fontSize: 14,
+    color: "#0d7c8a",
+    fontWeight: "600",
+  },
+  recentItemCard: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  recentItemInfo: {
+    flex: 1,
+  },
+  recentItemName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  recentItemCategory: {
+    fontSize: 13,
+    color: "#666",
+  },
+  availableBadge: {
+    backgroundColor: "#e8f5e9",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  availableBadgeText: {
+    fontSize: 12,
+    color: "#2e7d32",
+    fontWeight: "600",
+  },
+  borrowedBadge: {
+    backgroundColor: "#fff3e0",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  borrowedBadgeText: {
+    fontSize: 12,
+    color: "#e65100",
+    fontWeight: "600",
   },
 });

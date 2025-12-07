@@ -5,9 +5,13 @@ import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuth } from '@/app/auth-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { user } = useAuth();
+
+  const isLender = user?.userType === 'lender' || user?.userType === 'both';
 
   return (
     <Tabs
@@ -23,13 +27,78 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
+      {isLender ? (
+        <>
+          <Tabs.Screen
+            name="add-item"
+            options={{
+              title: 'Add Item',
+              tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
+            }}
+          />
+          <Tabs.Screen
+            name="my-items"
+            options={{
+              title: 'My Items',
+              tabBarIcon: ({ color }) => <IconSymbol size={28} name="shippingbox.fill" color={color} />,
+            }}
+          />
+          <Tabs.Screen
+            name="requests"
+            options={{
+              title: 'Requests',
+              tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock.fill" color={color} />,
+            }}
+          />
+          <Tabs.Screen
+            name="profile"
+            options={{
+              title: 'Profile',
+              tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+            }}
+          />
+          <Tabs.Screen
+            name="explore"
+            options={{
+              href: null, // Hide from lenders
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <Tabs.Screen
+            name="explore"
+            options={{
+              title: 'Explore',
+              tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+            }}
+          />
+          <Tabs.Screen
+            name="add-item"
+            options={{
+              href: null, // Hide from borrowers
+            }}
+          />
+          <Tabs.Screen
+            name="my-items"
+            options={{
+              href: null, // Hide from borrowers
+            }}
+          />
+          <Tabs.Screen
+            name="requests"
+            options={{
+              href: null, // Hide from borrowers
+            }}
+          />
+          <Tabs.Screen
+            name="profile"
+            options={{
+              href: null, // Hide from borrowers
+            }}
+          />
+        </>
+      )}
     </Tabs>
   );
 }
