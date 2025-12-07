@@ -1,91 +1,133 @@
-import { Text, View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
-import { useState } from 'react';
+import { Text, View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/app/auth-context';
+import { auth } from '@/config/firebase';
+import {
+  subscribeToAvailableItems,
+  subscribeToUserRequests,
+  searchItems,
+  Item,
+  BorrowRequest
+} from '@/services/firebase-service';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [items, setItems] = useState<Item[]>([]);
+  const [requests, setRequests] = useState<BorrowRequest[]>([]);
+  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
 
   const categories = ["All", "Tools", "Sports", "Outdoor", "Electronics"];
 
-  const mockRequests = [
-    {
-      id: "1",
-      itemName: "Electric Drill",
-      startDate: "2025-11-25",
-      endDate: "2025-11-30",
-      status: "Waiting for lender response"
-    }
-  ];
+  // Subscribe to real-time items updates
+  useEffect(() => {
+    if (!auth.currentUser) return;
 
-  const mockItems = [
-    {
-      id: "1",
-      title: "Electric Drill",
-      description: "DeWalt 20V cordless drill, barely used",
-      category: "Tools",
-      imageUrl: "https://via.placeholder.com/60",
-      pricePerDay: 15,
-      isFree: false,
-      ownerName: "James Wilson",
-      ownerAvatar: "https://via.placeholder.com/30"
-    },
-    {
-      id: "2",
-      title: "Mountain Bike",
-      description: "Trek X-Caliber full suspension, 29er",
-      category: "Sports",
-      imageUrl: "https://via.placeholder.com/60",
-      pricePerDay: 25,
-      isFree: false,
-      ownerName: "You",
-      ownerAvatar: "https://via.placeholder.com/30"
-    },
-    {
-      id: "3",
-      title: "Camping Tent",
-      description: "Coleman 4-person tent, waterproof, includes stakes",
-      category: "Outdoor",
-      imageUrl: "https://via.placeholder.com/60",
-      pricePerDay: 0,
-      isFree: true,
-      ownerName: "James Wilson",
-      ownerAvatar: "https://via.placeholder.com/30"
-    },
-    {
-      id: "4",
-      title: "Ladder",
-      description: "6-foot aluminum ladder, lightweight and stable",
-      category: "Tools",
-      imageUrl: "https://via.placeholder.com/60",
-      pricePerDay: 8,
-      isFree: false,
-      ownerName: "James Wilson",
-      ownerAvatar: "https://via.placeholder.com/30"
-    },
-    {
-      id: "5",
-      title: "DSLR Camera",
-      description: "Canon EOS R50, 24.2MP with 18-45mm lens",
-      category: "Electronics",
-      imageUrl: "https://via.placeholder.com/60",
-      pricePerDay: 35,
-      isFree: false,
-      ownerName: "You",
-      ownerAvatar: "https://via.placeholder.com/30"
-    }
-  ];
+    const unsubscribe = subscribeToAvailableItems((newItems) => {
+      setItems(newItems);
+      setFilteredItems(newItems);
+      setIsLoading(false);
+    }, selectedCategory);
+
+    return () => unsubscribe();
+  }, [selectedCategory]);
+
+  // Subscribe to user's requests
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const unsubscribe = subscribeToUserRequests(auth.currentUser.uid, (newRequests) => {
+      setRequests(newRequests);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Handle search
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!searchQuery.trim()) {
+        setFilteredItems(items);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const results = await searchItems(searchQuery);
+        // Apply category filter if not "All"
+        const filtered = selectedCategory === "All"
+          ? results
+          : results.filter(item => item.category === selectedCategory);
+        setFilteredItems(filtered);
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timeoutId = setTimeout(performSearch, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, items, selectedCategory]);
 
   function handleCategoryPress(category: string) {
     setSelectedCategory(category);
   }
 
   function handleItemPress(itemId: string) {
-    console.log("Item pressed:", itemId);
+    router.push(`/item-details?id=${itemId}`);
+  }
+
+  function getStatusColor(status: string) {
+    switch (status) {
+      case 'pending':
+        return '#ffa500';
+      case 'approved':
+        return '#4caf50';
+      case 'rejected':
+        return '#f44336';
+      case 'active':
+        return '#2196f3';
+      case 'completed':
+        return '#9e9e9e';
+      default:
+        return '#ffa500';
+    }
+  }
+
+  function getStatusText(status: string) {
+    switch (status) {
+      case 'pending':
+        return 'Waiting for lender response';
+      case 'approved':
+        return 'Approved - Ready to pickup';
+      case 'rejected':
+        return 'Request declined';
+      case 'active':
+        return 'Currently borrowing';
+      case 'completed':
+        return 'Completed';
+      default:
+        return status;
+    }
   }
 
   function renderBorrowerUI() {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0d7c8a" />
+          <Text style={styles.loadingText}>Loading items...</Text>
+        </View>
+      );
+    }
+
     return (
       <ScrollView style={styles.container}>
         <View style={styles.header}>
@@ -100,6 +142,9 @@ export default function HomeScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {isSearching && (
+            <ActivityIndicator size="small" color="#0d7c8a" style={styles.searchLoader} />
+          )}
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
@@ -124,55 +169,80 @@ export default function HomeScreen() {
           })}
         </ScrollView>
 
-        <View style={styles.requestsSection}>
-          <Text style={styles.sectionTitle}>My Requests</Text>
-          {mockRequests.map((request) => {
-            return (
-              <View key={request.id} style={styles.requestCard}>
-                <View style={styles.requestHeader}>
-                  <Text style={styles.requestStatus}>Pending</Text>
-                </View>
-                <Text style={styles.requestItemName}>{request.itemName}</Text>
-                <Text style={styles.requestDates}>
-                  {request.startDate} to {request.endDate}
-                </Text>
-                <Text style={styles.requestStatusText}>{request.status}</Text>
-              </View>
-            );
-          })}
-        </View>
-
-        <View style={styles.itemsSection}>
-          <Text style={styles.sectionTitle}>Available Items ({mockItems.length})</Text>
-          {mockItems.map((item) => {
-            return (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.itemCard}
-                onPress={() => handleItemPress(item.id)}
-              >
-                <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
-                <View style={styles.itemDetails}>
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    <View style={styles.categoryBadge}>
-                      <Text style={styles.categoryBadgeText}>{item.category}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.itemDescription}>{item.description}</Text>
-                  <View style={styles.itemFooter}>
-                    <View style={styles.ownerInfo}>
-                      <Image source={{ uri: item.ownerAvatar }} style={styles.ownerAvatar} />
-                      <Text style={styles.ownerName}>{item.ownerName}</Text>
-                    </View>
-                    <Text style={styles.itemPrice}>
-                      {item.isFree ? "Free" : "$" + item.pricePerDay + "/day"}
+        {requests.length > 0 && (
+          <View style={styles.requestsSection}>
+            <Text style={styles.sectionTitle}>My Requests ({requests.length})</Text>
+            {requests.slice(0, 3).map((request) => {
+              const statusColor = getStatusColor(request.status);
+              return (
+                <View key={request.id} style={[styles.requestCard, { borderLeftColor: statusColor }]}>
+                  <View style={styles.requestHeader}>
+                    <Text style={[styles.requestStatus, { color: statusColor }]}>
+                      {request.status.toUpperCase()}
                     </Text>
                   </View>
+                  <Text style={styles.requestItemName}>{request.itemName}</Text>
+                  <Text style={styles.requestDates}>
+                    {request.startDate} to {request.endDate}
+                  </Text>
+                  <Text style={[styles.requestStatusText, { color: statusColor }]}>
+                    {getStatusText(request.status)}
+                  </Text>
                 </View>
-              </TouchableOpacity>
-            );
-          })}
+              );
+            })}
+          </View>
+        )}
+
+        <View style={styles.itemsSection}>
+          <Text style={styles.sectionTitle}>
+            Available Items ({filteredItems.length})
+          </Text>
+          {filteredItems.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                {searchQuery ? 'No items found matching your search' : 'No items available'}
+              </Text>
+              <Text style={styles.emptyStateSubtext}>
+                {searchQuery ? 'Try a different search term' : 'Check back later for new items'}
+              </Text>
+            </View>
+          ) : (
+            filteredItems.map((item) => {
+              const isOwnItem = item.ownerId === auth.currentUser?.uid;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.itemCard}
+                  onPress={() => handleItemPress(item.id)}
+                >
+                  <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
+                  <View style={styles.itemDetails}>
+                    <View style={styles.itemHeader}>
+                      <Text style={styles.itemTitle}>{item.title}</Text>
+                      <View style={styles.categoryBadge}>
+                        <Text style={styles.categoryBadgeText}>{item.category}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.itemDescription} numberOfLines={2}>
+                      {item.description}
+                    </Text>
+                    <View style={styles.itemFooter}>
+                      <View style={styles.ownerInfo}>
+                        <Image source={{ uri: item.ownerAvatar }} style={styles.ownerAvatar} />
+                        <Text style={styles.ownerName}>
+                          {isOwnItem ? 'You' : item.ownerName}
+                        </Text>
+                      </View>
+                      <Text style={styles.itemPrice}>
+                        {item.isFree ? "Free" : `$${item.pricePerDay}/day`}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </View>
       </ScrollView>
     );
@@ -193,6 +263,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
+  searchLoader: {
+    position: "absolute",
+    right: 15,
+    top: 27,
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
   },
   header: {
     backgroundColor: "#0d7c8a",
