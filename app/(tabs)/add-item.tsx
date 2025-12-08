@@ -11,6 +11,7 @@ import {
   Switch,
   Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -98,7 +99,14 @@ export default function AddItemScreen() {
       const tempItemId = Date.now().toString();
       const imageUrl = await uploadItemImage(imageUri, tempItemId);
 
-      // Calculate price per day
+      // Get the actual price based on pricing type
+      const actualPrice = isFree
+        ? 0
+        : pricingType === 'day'
+          ? parseFloat(pricePerDay)
+          : parseFloat(pricePerHour);
+
+      // Calculate price per day (for sorting/filtering purposes)
       const finalPricePerDay = isFree
         ? 0
         : pricingType === 'day'
@@ -111,7 +119,9 @@ export default function AddItemScreen() {
         description: description.trim(),
         category,
         imageUrl,
+        price: actualPrice,
         pricePerDay: finalPricePerDay,
+        pricingType,
         isFree,
         ownerId: auth.currentUser.uid,
         ownerName: user.name,
@@ -148,7 +158,7 @@ export default function AddItemScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
@@ -300,7 +310,7 @@ export default function AddItemScreen() {
 
               {pricingType === 'day' ? (
                 <View style={styles.priceInputContainer}>
-                  <Text style={styles.currencySymbol}>$</Text>
+                  <Text style={styles.currencySymbol}>€</Text>
                   <TextInput
                     style={styles.priceInput}
                     placeholder="0.00"
@@ -312,7 +322,7 @@ export default function AddItemScreen() {
                 </View>
               ) : (
                 <View style={styles.priceInputContainer}>
-                  <Text style={styles.currencySymbol}>$</Text>
+                  <Text style={styles.currencySymbol}>€</Text>
                   <TextInput
                     style={styles.priceInput}
                     placeholder="0.00"
@@ -358,7 +368,7 @@ export default function AddItemScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -370,9 +380,20 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#0d7c8a',
     padding: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 10 : 60,
     flexDirection: 'row',
     alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   backButton: {
     marginRight: 15,
@@ -461,10 +482,18 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 12,
+    padding: Platform.OS === 'ios' ? 14 : 12,
     fontSize: 15,
     borderWidth: 1,
     borderColor: '#e0e0e0',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+    }),
   },
   textArea: {
     height: 100,
@@ -591,9 +620,20 @@ const styles = StyleSheet.create({
   addButton: {
     backgroundColor: '#0d7c8a',
     padding: 16,
-    borderRadius: 10,
+    borderRadius: Platform.OS === 'ios' ? 12 : 10,
     alignItems: 'center',
     marginBottom: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#0d7c8a',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   addButtonDisabled: {
     opacity: 0.6,

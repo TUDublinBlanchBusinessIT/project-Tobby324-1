@@ -23,6 +23,8 @@ export interface Item {
   category: string;
   imageUrl: string;
   pricePerDay: number;
+  price: number;
+  pricingType: 'hour' | 'day';
   isFree: boolean;
   ownerId: string;
   ownerName: string;

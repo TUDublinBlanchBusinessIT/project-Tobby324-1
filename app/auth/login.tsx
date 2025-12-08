@@ -120,11 +120,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 270,
+    height: 183,
     alignSelf: 'center',
     marginBottom: 40,
-    borderRadius: 60,
+    borderRadius: 12,
   },
   label: {
     fontSize: 16,

@@ -10,9 +10,12 @@ import {
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface UserData {
+  uid: string;
   email: string;
   name: string;
   userType: 'borrower' | 'lender' | 'both';
+  city: string;
+  profilePicture?: string;
 }
 
 interface AuthContextType {
@@ -20,7 +23,8 @@ interface AuthContextType {
   isLoading: boolean;
   user: UserData | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string, userType: 'borrower' | 'lender' | 'both') => Promise<void>;
+  signup: (email: string, password: string, name: string, userType: 'borrower' | 'lender' | 'both', city: string) => Promise<void>;
+  updateProfile: (updates: Partial<UserData>) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -41,7 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
-            const userData = userDoc.data() as UserData;
+            const userData = {
+              uid: firebaseUser.uid,
+              ...userDoc.data()
+            } as UserData;
             setUser(userData);
             setIsLoggedIn(true);
           } else {
@@ -83,7 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
-        const userData = userDoc.data() as UserData;
+        const userData = {
+          uid: userCredential.user.uid,
+          ...userDoc.data()
+        } as UserData;
         setUser(userData);
         setIsLoggedIn(true);
       } else {
@@ -95,19 +105,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const signup = useCallback(async (email: string, password: string, name: string, userType: 'borrower' | 'lender' | 'both') => {
+  const signup = useCallback(async (email: string, password: string, name: string, userType: 'borrower' | 'lender' | 'both', city: string) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
       const userData: UserData = {
+        uid: userCredential.user.uid,
         email,
         name,
-        userType
+        userType,
+        city
       };
 
       const userDocRef = doc(db, "users", userCredential.user.uid);
       await setDoc(userDocRef, {
-        ...userData,
+        email,
+        name,
+        userType,
+        city,
         createdAt: new Date().toISOString()
       });
 
@@ -130,8 +145,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const updateProfile = useCallback(async (updates: Partial<UserData>) => {
+    try {
+      if (!user) throw new Error('No user logged in');
+
+      const userDocRef = doc(db, "users", user.uid);
+      await setDoc(userDocRef, updates, { merge: true });
+
+      setUser({ ...user, ...updates });
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      throw error;
+    }
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, isLoading, user, login, signup, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, isLoading, user, login, signup, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

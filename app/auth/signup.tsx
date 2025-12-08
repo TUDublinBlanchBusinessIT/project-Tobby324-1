@@ -12,6 +12,7 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [city, setCity] = useState('');
   const [userType, setUserType] = useState<'borrower' | 'lender' | 'both' | null>(null);
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
@@ -27,7 +28,7 @@ export default function SignupScreen() {
   };
 
   const handleSignup = async () => {
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !city) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -54,7 +55,7 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      await signup(email, password, name, userType);
+      await signup(email, password, name, userType, city);
       Alert.alert('Success', 'Account created!');
     } catch (error) {
       Alert.alert('Error', 'Signup failed');
@@ -92,6 +93,17 @@ export default function SignupScreen() {
             keyboardType="email-address"
             editable={!loading}
           />
+
+          <ThemedText style={styles.label}>City</ThemedText>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., Dublin"
+            placeholderTextColor="#999"
+            value={city}
+            onChangeText={setCity}
+            editable={!loading}
+          />
+          <ThemedText style={styles.cityNote}>📍 Country: Ireland</ThemedText>
 
           <ThemedText style={styles.label}>Password</ThemedText>
           <TextInput
@@ -180,11 +192,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 270,
+    height: 183,
     alignSelf: 'center',
     marginBottom: 40,
-    borderRadius: 60,
+    borderRadius: 12,
   },
   label: {
     fontSize: 16,
@@ -251,5 +263,11 @@ const styles = StyleSheet.create({
   signinLinkBold: {
     fontWeight: '600',
     color: '#0d7c8a',
+  },
+  cityNote: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: -10,
+    marginBottom: 15,
   },
 });

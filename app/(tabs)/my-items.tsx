@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/app/auth-context';
@@ -59,7 +60,7 @@ export default function MyItemsScreen() {
         <Text style={styles.itemTitle}>{item.title}</Text>
         <Text style={styles.itemCategory}>{item.category}</Text>
         <Text style={styles.itemPrice}>
-          {item.isFree ? 'Free' : `$${item.pricePerDay.toFixed(0)}/day`}
+          {item.isFree ? 'Free' : `€${item.price.toFixed(0)}/${item.pricingType}`}
         </Text>
       </View>
 
@@ -99,7 +100,7 @@ export default function MyItemsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Items</Text>
         <Text style={styles.headerSubtitle}>{items.length} items listed</Text>
@@ -126,7 +127,7 @@ export default function MyItemsScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -149,7 +150,18 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#0d7c8a',
     padding: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 10 : 60,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   headerTitle: {
     fontSize: 24,
@@ -196,16 +208,22 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: Platform.OS === 'ios' ? 12 : 8,
     padding: 12,
     marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   itemImage: {
     width: 60,

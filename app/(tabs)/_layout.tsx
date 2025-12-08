@@ -27,78 +27,44 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
-      {isLender ? (
-        <>
-          <Tabs.Screen
-            name="add-item"
-            options={{
-              title: 'Add Item',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="my-items"
-            options={{
-              title: 'My Items',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="shippingbox.fill" color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="requests"
-            options={{
-              title: 'Requests',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock.fill" color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="profile"
-            options={{
-              title: 'Profile',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="explore"
-            options={{
-              href: null, // Hide from lenders
-            }}
-          />
-        </>
-      ) : (
-        <>
-          <Tabs.Screen
-            name="explore"
-            options={{
-              title: 'Explore',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="add-item"
-            options={{
-              href: null, // Hide from borrowers
-            }}
-          />
-          <Tabs.Screen
-            name="my-items"
-            options={{
-              href: null, // Hide from borrowers
-            }}
-          />
-          <Tabs.Screen
-            name="requests"
-            options={{
-              href: null, // Hide from borrowers
-            }}
-          />
-          <Tabs.Screen
-            name="profile"
-            options={{
-              href: null, // Hide from borrowers
-            }}
-          />
-        </>
-      )}
+      <Tabs.Screen
+        name="add-item"
+        options={isLender ? {
+          title: 'Add Item',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
+        } : {
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="my-items"
+        options={isLender ? {
+          title: 'My Items',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="shippingbox.fill" color={color} />,
+        } : {
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="requests"
+        options={{
+          title: 'Requests',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
