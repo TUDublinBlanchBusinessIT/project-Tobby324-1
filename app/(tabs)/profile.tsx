@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Platform
+  Platform,
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
@@ -19,6 +20,10 @@ import { storage } from '@/config/firebase';
 export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuth();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(user?.name || '');
+  const [editedCity, setEditedCity] = useState(user?.city || '');
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!user) {
     return (
@@ -27,6 +32,45 @@ export default function ProfileScreen() {
       </View>
     );
   }
+
+  const handleEdit = () => {
+    setEditedName(user.name);
+    setEditedCity(user.city);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(user.name);
+    setEditedCity(user.city);
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedName.trim()) {
+      Alert.alert('Error', 'Name cannot be empty');
+      return;
+    }
+
+    if (!editedCity.trim()) {
+      Alert.alert('Error', 'City cannot be empty');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateProfile({
+        name: editedName.trim(),
+        city: editedCity.trim()
+      });
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -121,6 +165,14 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
         <Text style={styles.headerSubtitle}>Manage your account</Text>
+        {!isEditing && (
+          <TouchableOpacity
+            style={styles.editHeaderButton}
+            onPress={handleEdit}
+          >
+            <Text style={styles.editHeaderButtonText}>Edit</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -169,7 +221,17 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Full Name</Text>
-                <Text style={styles.infoValue}>{user.name}</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={styles.editInput}
+                    value={editedName}
+                    onChangeText={setEditedName}
+                    placeholder="Your name"
+                    editable={!isSaving}
+                  />
+                ) : (
+                  <Text style={styles.infoValue}>{user.name}</Text>
+                )}
               </View>
             </View>
           </View>
@@ -193,7 +255,20 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Location</Text>
-                <Text style={styles.infoValue}>{user.city}, Ireland</Text>
+                {isEditing ? (
+                  <View>
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedCity}
+                      onChangeText={setEditedCity}
+                      placeholder="City"
+                      editable={!isSaving}
+                    />
+                    <Text style={styles.countryText}>Ireland</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.infoValue}>{user.city}, Ireland</Text>
+                )}
               </View>
             </View>
           </View>
@@ -213,9 +288,33 @@ export default function ProfileScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsSection}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>Logout</Text>
-          </TouchableOpacity>
+          {isEditing ? (
+            <View style={styles.editActionsContainer}>
+              <TouchableOpacity
+                style={[styles.saveButton, isSaving && styles.buttonDisabled]}
+                onPress={handleSaveEdit}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.cancelButton, isSaving && styles.buttonDisabled]}
+                onPress={handleCancelEdit}
+                disabled={isSaving}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Footer */}
@@ -236,6 +335,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0d7c8a',
     padding: 20,
     paddingTop: Platform.OS === 'ios' ? 10 : 60,
+    position: 'relative',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -258,6 +358,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 4,
     opacity: 0.9,
+  },
+  editHeaderButton: {
+    position: 'absolute',
+    right: 20,
+    top: Platform.OS === 'ios' ? 10 : 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  editHeaderButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   scrollContent: {
     flex: 1,
@@ -380,6 +494,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 20,
   },
+  editActionsContainer: {
+    gap: 12,
+  },
+  saveButton: {
+    backgroundColor: '#4caf50',
+    padding: 16,
+    borderRadius: Platform.OS === 'ios' ? 12 : 10,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#4caf50',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: Platform.OS === 'ios' ? 12 : 10,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   logoutButton: {
     backgroundColor: '#f44336',
     padding: 16,
@@ -401,6 +556,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  editInput: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '600',
+    borderWidth: 2,
+    borderColor: '#0d7c8a',
+  },
+  countryText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
   },
   footer: {
     alignItems: 'center',

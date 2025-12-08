@@ -158,6 +158,10 @@ export default function HomeScreen() {
   }
 
   function renderBorrowerUI() {
+    const pendingRequests = requests.filter(r => r.status === 'pending');
+    const approvedRequests = requests.filter(r => r.status === 'approved');
+    const activeRequests = requests.filter(r => r.status === 'active');
+
     if (isLoading) {
       return (
         <View style={styles.loadingContainer}>
@@ -171,119 +175,172 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView style={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Browse Items</Text>
-            <Text style={styles.headerSubtitle}>Find and borrow items from your community</Text>
+            <Text style={styles.headerTitle}>Borrower Dashboard</Text>
+            <Text style={styles.headerSubtitle}>Browse and manage your borrowed items</Text>
           </View>
 
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search items..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {isSearching && (
-            <ActivityIndicator size="small" color="#0d7c8a" style={styles.searchLoader} />
-          )}
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
-          {categories.map((category) => {
-            return (
-              <TouchableOpacity
-                key={category}
-                style={[
-                  styles.categoryPill,
-                  selectedCategory === category && styles.categoryPillActive
-                ]}
-                onPress={() => handleCategoryPress(category)}
-              >
-                <Text style={[
-                  styles.categoryText,
-                  selectedCategory === category && styles.categoryTextActive
-                ]}>
-                  {category}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {requests.length > 0 && (
-          <View style={styles.requestsSection}>
-            <Text style={styles.sectionTitle}>My Requests ({requests.length})</Text>
-            {requests.slice(0, 3).map((request) => {
-              const statusColor = getStatusColor(request.status);
-              return (
-                <View key={request.id} style={[styles.requestCard, { borderLeftColor: statusColor }]}>
-                  <View style={styles.requestHeader}>
-                    <Text style={[styles.requestStatus, { color: statusColor }]}>
-                      {request.status.toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={styles.requestItemName}>{request.itemName}</Text>
-                  <Text style={styles.requestDates}>
-                    {request.startDate} to {request.endDate}
-                  </Text>
-                  <Text style={[styles.requestStatusText, { color: statusColor }]}>
-                    {getStatusText(request.status)}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        <View style={styles.itemsSection}>
-          <Text style={styles.sectionTitle}>
-            Available Items ({filteredItems.length})
-          </Text>
-          {filteredItems.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                {searchQuery ? 'No items found matching your search' : 'No items available'}
-              </Text>
-              <Text style={styles.emptyStateSubtext}>
-                {searchQuery ? 'Try a different search term' : 'Check back later for new items'}
-              </Text>
+          {/* Statistics Cards */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>📋</Text>
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statLabel}>My Requests</Text>
+                <Text style={styles.statValue}>{requests.length}</Text>
+              </View>
             </View>
-          ) : (
-            filteredItems.map((item) => {
-              const isOwnItem = item.ownerId === auth.currentUser?.uid;
+
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>⏳</Text>
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statLabel}>Pending</Text>
+                <Text style={styles.statValue}>{pendingRequests.length}</Text>
+              </View>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>✅</Text>
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statLabel}>Approved</Text>
+                <Text style={styles.statValue}>{approvedRequests.length}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActionsSection}>
+            <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+
+            <TouchableOpacity
+              style={styles.viewRequestsButton}
+              onPress={() => router.push('/(tabs)/requests')}
+            >
+              <Text style={styles.viewRequestsButtonText}>📋 View My Requests</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Recent Requests */}
+          {requests.length > 0 && (
+            <View style={styles.recentItemsSection}>
+              <View style={styles.recentItemsHeader}>
+                <Text style={styles.recentItemsTitle}>Recent Requests</Text>
+                <TouchableOpacity onPress={() => router.push('/(tabs)/requests')}>
+                  <Text style={styles.viewAllLink}>View All</Text>
+                </TouchableOpacity>
+              </View>
+
+              {requests.slice(0, 3).map((request) => {
+                const statusColor = getStatusColor(request.status);
+                return (
+                  <TouchableOpacity
+                    key={request.id}
+                    style={styles.recentItemCard}
+                    onPress={() => router.push('/(tabs)/requests')}
+                  >
+                    <View style={styles.recentItemInfo}>
+                      <Text style={styles.recentItemName}>{request.itemName}</Text>
+                      <Text style={styles.recentItemCategory}>{request.startDate} - {request.endDate}</Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+                      <Text style={styles.statusBadgeTextWhite}>{request.status.toUpperCase()}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Browse Items Section Header */}
+          <View style={styles.browseItemsHeader}>
+            <Text style={styles.browseItemsTitle}>Browse Available Items</Text>
+          </View>
+
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search items..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {isSearching && (
+              <ActivityIndicator size="small" color="#0d7c8a" style={styles.searchLoader} />
+            )}
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
+            {categories.map((category) => {
               return (
                 <TouchableOpacity
-                  key={item.id}
-                  style={styles.itemCard}
-                  onPress={() => handleItemPress(item.id)}
+                  key={category}
+                  style={[
+                    styles.categoryPill,
+                    selectedCategory === category && styles.categoryPillActive
+                  ]}
+                  onPress={() => handleCategoryPress(category)}
                 >
-                  <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
-                  <View style={styles.itemDetails}>
-                    <View style={styles.itemHeader}>
-                      <Text style={styles.itemTitle}>{item.title}</Text>
-                      <View style={styles.categoryBadge}>
-                        <Text style={styles.categoryBadgeText}>{item.category}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.itemDescription} numberOfLines={2}>
-                      {item.description}
-                    </Text>
-                    <View style={styles.itemFooter}>
-                      <View style={styles.ownerInfo}>
-                        <Image source={{ uri: item.ownerAvatar }} style={styles.ownerAvatar} />
-                        <Text style={styles.ownerName}>
-                          {isOwnItem ? 'You' : item.ownerName}
-                        </Text>
-                      </View>
-                      <Text style={styles.itemPrice}>
-                        {item.isFree ? "Free" : `€${item.price}/${item.pricingType}`}
-                      </Text>
-                    </View>
-                  </View>
+                  <Text style={[
+                    styles.categoryText,
+                    selectedCategory === category && styles.categoryTextActive
+                  ]}>
+                    {category}
+                  </Text>
                 </TouchableOpacity>
               );
-            })
-          )}
-        </View>
+            })}
+          </ScrollView>
+
+          <View style={styles.itemsSection}>
+            {filteredItems.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  {searchQuery ? 'No items found matching your search' : 'No items available'}
+                </Text>
+                <Text style={styles.emptyStateSubtext}>
+                  {searchQuery ? 'Try a different search term' : 'Check back later for new items'}
+                </Text>
+              </View>
+            ) : (
+              filteredItems.map((item) => {
+                const isOwnItem = item.ownerId === auth.currentUser?.uid;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.itemCard}
+                    onPress={() => handleItemPress(item.id)}
+                  >
+                    <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
+                    <View style={styles.itemDetails}>
+                      <View style={styles.itemHeader}>
+                        <Text style={styles.itemTitle}>{item.title}</Text>
+                        <View style={styles.categoryBadge}>
+                          <Text style={styles.categoryBadgeText}>{item.category}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.itemDescription} numberOfLines={2}>
+                        {item.description}
+                      </Text>
+                      <View style={styles.itemFooter}>
+                        <View style={styles.ownerInfo}>
+                          <Image source={{ uri: item.ownerAvatar }} style={styles.ownerAvatar} />
+                          <Text style={styles.ownerName}>
+                            {isOwnItem ? 'You' : item.ownerName}
+                          </Text>
+                        </View>
+                        <Text style={styles.itemPrice}>
+                          {item.isFree ? "Free" : `€${item.price}/${item.pricingType}`}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
         </ScrollView>
       </SafeAreaView>
     );
@@ -489,8 +546,21 @@ const styles = StyleSheet.create({
     color: "#fff",
     opacity: 0.9,
   },
+  browseItemsHeader: {
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 5,
+    backgroundColor: "#fff",
+  },
+  browseItemsTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
   searchContainer: {
-    padding: 15,
+    paddingHorizontal: 15,
+    paddingTop: 15,
+    paddingBottom: 10,
     backgroundColor: "#fff",
   },
   searchInput: {
@@ -501,7 +571,7 @@ const styles = StyleSheet.create({
   },
   categoryContainer: {
     paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingBottom: 15,
     backgroundColor: "#fff",
     marginBottom: 10,
   },
@@ -523,49 +593,15 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-  requestsSection: {
-    padding: 15,
-    backgroundColor: "#fff",
-    marginBottom: 10,
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-    color: "#333",
-  },
-  requestCard: {
-    backgroundColor: "#fff9e6",
-    borderRadius: 8,
-    padding: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: "#ffa500",
-  },
-  requestHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  requestStatus: {
-    fontSize: 12,
-    color: "#ffa500",
-    fontWeight: "bold",
-  },
-  requestItemName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#333",
-  },
-  requestDates: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
-  },
-  requestStatusText: {
-    fontSize: 12,
-    color: "#ffa500",
-    fontStyle: "italic",
+  statusBadgeTextWhite: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   itemsSection: {
     padding: 15,
