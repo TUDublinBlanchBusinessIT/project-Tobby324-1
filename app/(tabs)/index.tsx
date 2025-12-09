@@ -465,17 +465,185 @@ export default function HomeScreen() {
     );
   }
 
+  // Render combined dashboard for "both" users
+  if (user?.userType === "both") {
+    const pendingRequests = lenderRequests.filter(r => r.status === 'pending');
+    const activeLoans = lenderRequests.filter(r => r.status === 'approved' || r.status === 'active');
+    const borrowerPending = requests.filter(r => r.status === 'pending');
+    const borrowerApproved = requests.filter(r => r.status === 'approved');
+
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0d7c8a" />
+          <Text style={styles.loadingText}>Loading dashboard...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScrollView style={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Dashboard</Text>
+            <Text style={styles.headerSubtitle}>Manage lending and borrowing</Text>
+          </View>
+
+          {/* Combined Statistics */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>📦</Text>
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statLabel}>My Items</Text>
+                <Text style={styles.statValue}>{userItems.length}</Text>
+              </View>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>🕐</Text>
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statLabel}>Incoming</Text>
+                <Text style={styles.statValue}>{pendingRequests.length}</Text>
+              </View>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>📋</Text>
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statLabel}>My Requests</Text>
+                <Text style={styles.statValue}>{requests.length}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActionsSection}>
+            <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+
+            <TouchableOpacity
+              style={styles.addItemButton}
+              onPress={() => router.push('/(tabs)/add-item')}
+            >
+              <Text style={styles.addItemButtonText}>+ Add New Item</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.viewRequestsButton}
+              onPress={() => router.push('/(tabs)/requests')}
+            >
+              <Text style={styles.viewRequestsButtonText}>📋 View All Requests</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Browse Items Section */}
+          <View style={styles.browseItemsHeader}>
+            <Text style={styles.browseItemsTitle}>Browse Available Items</Text>
+          </View>
+
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search items..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {isSearching && (
+              <ActivityIndicator size="small" color="#0d7c8a" style={styles.searchLoader} />
+            )}
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
+            {categories.map((category) => {
+              return (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryPill,
+                    selectedCategory === category && styles.categoryPillActive
+                  ]}
+                  onPress={() => handleCategoryPress(category)}
+                >
+                  <Text style={[
+                    styles.categoryText,
+                    selectedCategory === category && styles.categoryTextActive
+                  ]}>
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.itemsSection}>
+            {filteredItems.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  {searchQuery ? 'No items found matching your search' : 'No items available'}
+                </Text>
+                <Text style={styles.emptyStateSubtext}>
+                  {searchQuery ? 'Try a different search term' : 'Check back later for new items'}
+                </Text>
+              </View>
+            ) : (
+              filteredItems.map((item) => {
+                const isOwnItem = item.ownerId === auth.currentUser?.uid;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.itemCard}
+                    onPress={() => handleItemPress(item.id)}
+                  >
+                    <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
+                    <View style={styles.itemDetails}>
+                      <View style={styles.itemHeader}>
+                        <Text style={styles.itemTitle}>{item.title}</Text>
+                        <View style={styles.categoryBadge}>
+                          <Text style={styles.categoryBadgeText}>{item.category}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.itemDescription} numberOfLines={2}>
+                        {item.description}
+                      </Text>
+                      <View style={styles.itemFooter}>
+                        <View style={styles.ownerInfo}>
+                          <Image source={{ uri: item.ownerAvatar }} style={styles.ownerAvatar} />
+                          <Text style={styles.ownerName}>
+                            {isOwnItem ? 'You' : item.ownerName}
+                          </Text>
+                        </View>
+                        <Text style={styles.itemPrice}>
+                          {item.isFree ? "Free" : `€${item.price}/${item.pricingType}`}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   if (user?.userType === "borrower") {
     return renderBorrowerUI();
   }
 
-  if (user?.userType === "lender" || user?.userType === "both") {
+  if (user?.userType === "lender") {
     return renderLenderUI();
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.placeholderText}>Loading...</Text>
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#0d7c8a" />
+      <Text style={styles.loadingText}>Loading...</Text>
     </View>
   );
 }

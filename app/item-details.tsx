@@ -55,7 +55,17 @@ export default function ItemDetailsScreen() {
   function calculateTotalCost() {
     if (!item) return 0;
     if (item.isFree) return 0;
-    return calculateDays() * item.pricePerDay;
+    const days = calculateDays();
+
+    // Calculate based on actual pricing type
+    if (item.pricingType === 'hour') {
+      // For hourly pricing, calculate total hours and multiply by hourly rate
+      const hours = days * 24;
+      return hours * item.price;
+    } else {
+      // For daily pricing, multiply days by daily rate
+      return days * item.price;
+    }
   }
 
   async function handleRequestBorrow() {
@@ -140,7 +150,7 @@ export default function ItemDetailsScreen() {
               </View>
             </View>
             <Text style={styles.price}>
-              {item.isFree ? 'Free' : `$${item.pricePerDay}/day`}
+              {item.isFree ? 'Free' : `€${item.price}/${item.pricingType}`}
             </Text>
           </View>
 
@@ -224,7 +234,7 @@ export default function ItemDetailsScreen() {
                 {!item.isFree && (
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Total Cost:</Text>
-                    <Text style={styles.summaryValue}>${totalCost}</Text>
+                    <Text style={styles.summaryValue}>€{totalCost.toFixed(2)}</Text>
                   </View>
                 )}
               </View>
